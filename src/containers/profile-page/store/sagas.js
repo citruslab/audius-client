@@ -17,6 +17,7 @@ import AudiusBackend, { fetchCID } from 'services/AudiusBackend'
 import { setAudiusAccountUser } from 'services/LocalStorage'
 import apiClient from 'services/audius-api-client/AudiusAPIClient'
 import OpenSeaClient from 'services/opensea-client/OpenSeaClient'
+import SolanaClient from 'services/solana-client/SolanaClient'
 import { getUserId } from 'store/account/selectors'
 import { waitForBackendSetup } from 'store/backend/sagas'
 import * as cacheActions from 'store/cache/actions'
@@ -76,12 +77,12 @@ function* fetchProfileCustomizedCollectibles(user) {
 }
 
 function* fetchOpenSeaAssets(user) {
-  const associatedWallets = yield apiClient.getAssociatedWallets({
+  const { wallets } = yield apiClient.getAssociatedWallets({
     userID: user.user_id
   })
   const collectibleList = yield call(OpenSeaClient.getAllCollectibles, [
     user.wallet,
-    ...associatedWallets.wallets
+    ...wallets
   ])
   if (collectibleList) {
     if (collectibleList.length) {
@@ -98,6 +99,32 @@ function* fetchOpenSeaAssets(user) {
     }
   } else {
     console.log('could not fetch OpenSea assets')
+  }
+}
+
+function* fetchSolanaCollectibles(user) {
+  // const { sol_wallets: solWallets } = yield apiClient.getAssociatedWallets({
+  //   userID: user.user_id
+  // })
+  // const solanaCollectibleList = yield call(SolanaClient.getAllCollectibles, solWallets)
+  const solanaCollectibleList = yield call(SolanaClient.getAllCollectibles, [
+    '36Dc6UkSNbsbbXZ1gpJ2mmYNPS8UytU1FnckGAsyXiSC' // todo: correctly use user's solana addresses here
+  ])
+  if (solanaCollectibleList) {
+    if (solanaCollectibleList.length) {
+      yield put(
+        cacheActions.update(Kind.USERS, [
+          {
+            id: user.user_id,
+            metadata: { solanaCollectibleList }
+          }
+        ])
+      )
+    } else {
+      console.log('profile has no Solana NFTs')
+    }
+  } else {
+    console.log('could not fetch Solana NFTs')
   }
 }
 
@@ -137,6 +164,7 @@ function* fetchProfileAsync(action) {
     yield fork(fetchUserCollections, user.user_id)
     yield fork(fetchProfileCustomizedCollectibles, user)
     yield fork(fetchOpenSeaAssets, user)
+    yield fork(fetchSolanaCollectibles, user)
 
     // Get current user notification & subscription status
     const isSubscribed = yield call(

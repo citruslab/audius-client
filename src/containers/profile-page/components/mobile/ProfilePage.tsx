@@ -561,32 +561,32 @@ const ProfilePage = g(
         ]
       }
 
-      if (
-        // `has_collectibles` is a shortcut that is only true iff the user has a modified collectibles state
-        (profile?.has_collectibles &&
-          profileHasCollectiblesTierRequirement &&
-          !didCollectiblesLoadAndWasEmpty) ||
-        (profileHasCollectiblesTierRequirement &&
-          (profileHasVisibleImageOrVideoCollectibles ||
-            (profileHasCollectibles && isUserOnTheirProfile)))
-      ) {
-        profileTabs.push({
-          icon: <IconCollectibles />,
-          text: 'Collectibles',
-          label: Tabs.COLLECTIBLES
-        })
-        profileElements.push(
-          <div key='collectibles' className={styles.tracksLineupContainer}>
-            <CollectiblesPage
-              userId={userId}
-              name={name}
-              isMobile={true}
-              isUserOnTheirProfile={isUserOnTheirProfile}
-              profile={profile}
-            />
-          </div>
-        )
-      }
+      // if (
+      //   // `has_collectibles` is a shortcut that is only true iff the user has a modified collectibles state
+      //   (profile?.has_collectibles &&
+      //     profileHasCollectiblesTierRequirement &&
+      //     !didCollectiblesLoadAndWasEmpty) ||
+      //   (profileHasCollectiblesTierRequirement &&
+      //     (profileHasVisibleImageOrVideoCollectibles ||
+      //       (profileHasCollectibles && isUserOnTheirProfile)))
+      // ) {
+      profileTabs.push({
+        icon: <IconCollectibles />,
+        text: 'Collectibles',
+        label: Tabs.COLLECTIBLES
+      })
+      profileElements.push(
+        <div key='collectibles' className={styles.tracksLineupContainer}>
+          <CollectiblesPage
+            userId={userId}
+            name={name}
+            isMobile={true}
+            isUserOnTheirProfile={isUserOnTheirProfile}
+            profile={profile}
+          />
+        </div>
+      )
+      // }
     }
 
     const { tabs, body } = useTabs({

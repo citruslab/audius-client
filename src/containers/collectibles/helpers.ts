@@ -3,7 +3,12 @@ import {
   CollectibleType
 } from 'containers/collectibles/components/types'
 import { OpenSeaAsset, OpenSeaEvent } from 'services/opensea-client/types'
+import {
+  SolanaNFT,
+  SolanaNFTPropertiesFile
+} from 'services/solana-client/types'
 import { gifPreview } from 'utils/imageProcessingUtil'
+import { Nullable } from 'utils/typeUtils'
 
 /**
  * extensions based on OpenSea metadata standards
@@ -245,4 +250,183 @@ const getFrameFromGif = async (url: string, name: string) => {
   }
 
   return URL.createObjectURL(preview)
+}
+
+// ====================================
+// ====================================
+// ====================================
+
+// VIDEO
+//   .animation_url or.properties.category == video or .properties.files.findfirst(f => f.type.includes(video[with extension check ?])) or.properties.files.findfirst(f => getMimeType(f) == video[with extension check ?]or f.includes(https://watch.videodelivery.net/))
+// if not.animation_url, use f.uri or f(files[0] if files.length === 1, otherwise files[1])
+// use.image for video poster if exists
+// if animation_url or f, use type = video / mp4
+//   IMAGE
+// use.image or f.uri or f
+// maybe we don't need image check if gif and video have been eliminated in the process, has to be image
+
+type NFTType = {
+  collectibleType: CollectibleType
+  url: string
+  frameUrl: Nullable<string>
+}
+
+const nftGif = async (nft: SolanaNFT): Promise<Nullable<NFTType>> => {
+  const gifFile = nft.properties.files?.find(
+    file => typeof file === 'object' && file.type === 'image/gif'
+  )
+  if (gifFile) {
+    const url = (gifFile as SolanaNFTPropertiesFile).uri
+    const frameUrl = await getFrameFromGif(url, nft.name)
+    return { collectibleType: CollectibleType.GIF, url, frameUrl }
+  }
+  return null
+}
+
+// const defaultVideoType = 'video/mp4'
+const nftVideo = async (nft: SolanaNFT): Promise<Nullable<NFTType>> => {
+  const files = nft.properties.files
+  // should we restrict video file extensions here?
+  // MP4, MOV, GLB
+  // GLTF??
+  // https://github.com/metaplex-foundation/metaplex/blob/81023eb3e52c31b605e1dcf2eb1e7425153600cd/js/packages/web/src/views/artCreate/index.tsx#L318
+  // DO WE CARE ABOUT VR NFTs??
+  const videoFile = files?.find(
+    file => typeof file === 'object' && file.type.includes('video')
+  ) as SolanaNFTPropertiesFile
+  // https://github.com/metaplex-foundation/metaplex/blob/397ceff70b3524aa0543540584c7200c79b198a0/js/packages/web/src/components/ArtContent/index.tsx#L107
+  const videoUrl = files?.find(
+    file =>
+      typeof file === 'string' &&
+      file.startsWith('https://watch.videodelivery.net/')
+  ) as string
+  const isVideo =
+    nft.properties.category === 'video' ||
+    nft.animation_url ||
+    videoFile ||
+    videoUrl
+  if (isVideo) {
+    let url: string, videoType
+    if (nft.animation_url) {
+      url = nft.animation_url
+      // videoType = defaultVideoType
+    } else if (videoFile) {
+      url = videoFile.uri
+      videoType = videoFile.type
+    } else if (videoUrl) {
+      url = videoUrl // maybe videoUrl.replace('watch', 'iframe')?
+      // videoType = defaultVideoType
+    } else if (files?.length) {
+      if (files.length === 1) {
+        url = typeof files[0] === 'object' ? files[0].uri : files[0]
+      } else {
+        url = typeof files[1] === 'object' ? files[1].uri : files[1]
+      }
+      // videoType = defaultVideoType
+    } else {
+      return null
+    }
+    return {
+      collectibleType: CollectibleType.VIDEO,
+      url,
+      frameUrl: nft.image || null
+    }
+    // return { collectibleType: CollectibleType.VIDEO, url, frameUrl: nft.image || null, videoType }
+  }
+  return null
+}
+
+const nftImage = async (nft: SolanaNFT): Promise<Nullable<NFTType>> => {
+  const files = nft.properties.files
+  // should we restrict image file extensions here?
+  // PNG, JPG, GIF
+  // https://github.com/metaplex-foundation/metaplex/blob/81023eb3e52c31b605e1dcf2eb1e7425153600cd/js/packages/web/src/views/artCreate/index.tsx#L316
+  const imageFile = files?.find(
+    file => typeof file === 'object' && file.type.includes('image')
+  ) as SolanaNFTPropertiesFile
+  const isImage =
+    nft.properties.category === 'image' || nft.image.length || imageFile
+  if (isImage) {
+    let url
+    if (nft.image.length) {
+      url = nft.image
+    } else if (imageFile) {
+      url = imageFile.uri
+    } else if (files?.length) {
+      if (files.length === 1) {
+        url = typeof files[0] === 'object' ? files[0].uri : files[0]
+      } else {
+        url = typeof files[1] === 'object' ? files[1].uri : files[1]
+      }
+    } else {
+      return null
+    }
+    return { collectibleType: CollectibleType.IMAGE, url, frameUrl: url }
+  }
+  return null
+}
+
+const nftComputedMedia = async (nft: SolanaNFT): Promise<Nullable<NFTType>> => {
+  const files = nft.properties.files
+  if (!files?.length) {
+    return null
+  }
+  const url = typeof files[0] === 'object' ? files[0].uri : files[0]
+  // get mime type
+  // make sure it's gif/video/image
+  const mediaType = await fetch(url, { method: 'HEAD' })
+  const contentType = mediaType.headers.get('Content-Type')
+  const isGif = contentType?.includes('gif')
+  const isVideo = contentType?.includes('video')
+  if (isGif) {
+    const frameUrl = await getFrameFromGif(url, nft.name)
+    return { collectibleType: CollectibleType.GIF, url, frameUrl }
+  }
+  if (isVideo) {
+    return { collectibleType: CollectibleType.VIDEO, url, frameUrl: null }
+    // return { collectibleType: CollectibleType.VIDEO, url, frameUrl: null, videoType: contentType || defaultVideoType }
+  }
+  return { collectibleType: CollectibleType.IMAGE, url, frameUrl: url }
+}
+
+export const solanaNFTToCollectible = async (
+  nft: SolanaNFT,
+  address: string
+): Promise<Collectible> => {
+  const identifier = [
+    nft.symbol,
+    nft.name,
+    nft.image /* this would not always be image e.g. could be video or gif?? */
+  ]
+    .filter(Boolean)
+    .join(':::')
+
+  const collectible = {
+    id: identifier,
+    tokenId: identifier,
+    name: nft.name,
+    description: nft.description,
+    externalLink: nft.external_url,
+    isOwned: true
+  } as Collectible
+
+  if (nft.properties.creators.some(creator => creator.address === address)) {
+    collectible.isOwned = false
+  }
+
+  const { url, frameUrl, collectibleType } = ((await nftGif(nft)) ||
+    (await nftVideo(nft)) ||
+    (await nftImage(nft)) ||
+    (await nftComputedMedia(nft))) as NFTType
+  collectible.type = collectibleType
+  if (collectibleType === CollectibleType.GIF) {
+    collectible.gifUrl = url
+  } else if (collectibleType === CollectibleType.VIDEO) {
+    collectible.videoUrl = url
+  } else if (collectibleType === CollectibleType.IMAGE) {
+    collectible.imageUrl = url
+  }
+  collectible.frameUrl = frameUrl
+
+  return collectible
 }

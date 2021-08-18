@@ -36,6 +36,7 @@ export type UserMetadata = {
   has_collectibles: boolean
   collectibles?: CollectiblesMetadata
   collectibleList?: Collectible[]
+  solanaCollectibleList?: Collectible[]
 
   // Only present on the "current" account
   track_save_count?: number

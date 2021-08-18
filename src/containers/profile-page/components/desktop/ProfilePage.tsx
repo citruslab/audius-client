@@ -449,35 +449,35 @@ const ProfilePage = ({
       </div>
     ]
 
-    if (
-      // `has_collectibles` is a shortcut that is only true iff the user has a modified collectibles state
-      (profile?.has_collectibles &&
-        profileHasCollectiblesTierRequirement &&
-        !didCollectiblesLoadAndWasEmpty) ||
-      (profileHasCollectiblesTierRequirement &&
-        (profileHasVisibleImageOrVideoCollectibles ||
-          (profileHasCollectibles && isUserOnTheirProfile)))
-    ) {
-      headers.push({
-        icon: <IconCollectibles />,
-        text: Tabs.COLLECTIBLES,
-        label: Tabs.COLLECTIBLES
-      })
+    // if (
+    //   // `has_collectibles` is a shortcut that is only true iff the user has a modified collectibles state
+    //   (profile?.has_collectibles &&
+    //     profileHasCollectiblesTierRequirement &&
+    //     !didCollectiblesLoadAndWasEmpty) ||
+    //   (profileHasCollectiblesTierRequirement &&
+    //     (profileHasVisibleImageOrVideoCollectibles ||
+    //       (profileHasCollectibles && isUserOnTheirProfile)))
+    // ) {
+    headers.push({
+      icon: <IconCollectibles />,
+      text: Tabs.COLLECTIBLES,
+      label: Tabs.COLLECTIBLES
+    })
 
-      elements.push(
-        <div key={Tabs.COLLECTIBLES} className={styles.tiles}>
-          <CollectiblesPage
-            userId={userId}
-            name={name}
-            isMobile={false}
-            isUserOnTheirProfile={isUserOnTheirProfile}
-            profile={profile}
-            updateProfile={updateProfile}
-            onLoad={recalculate}
-          />
-        </div>
-      )
-    }
+    elements.push(
+      <div key={Tabs.COLLECTIBLES} className={styles.tiles}>
+        <CollectiblesPage
+          userId={userId}
+          name={name}
+          isMobile={false}
+          isUserOnTheirProfile={isUserOnTheirProfile}
+          profile={profile}
+          updateProfile={updateProfile}
+          onLoad={recalculate}
+        />
+      </div>
+    )
+    // }
 
     return { headers, elements }
   }
@@ -573,34 +573,34 @@ const ProfilePage = ({
       </div>
     ]
 
-    if (
-      (profile?.has_collectibles &&
-        profileHasCollectiblesTierRequirement &&
-        !didCollectiblesLoadAndWasEmpty) ||
-      (profileHasCollectiblesTierRequirement &&
-        (profileHasVisibleImageOrVideoCollectibles ||
-          (profileHasCollectibles && isUserOnTheirProfile)))
-    ) {
-      headers.push({
-        icon: <IconCollectibles />,
-        text: Tabs.COLLECTIBLES,
-        label: Tabs.COLLECTIBLES
-      })
+    // if (
+    //   (profile?.has_collectibles &&
+    //     profileHasCollectiblesTierRequirement &&
+    //     !didCollectiblesLoadAndWasEmpty) ||
+    //   (profileHasCollectiblesTierRequirement &&
+    //     (profileHasVisibleImageOrVideoCollectibles ||
+    //       (profileHasCollectibles && isUserOnTheirProfile)))
+    // ) {
+    headers.push({
+      icon: <IconCollectibles />,
+      text: Tabs.COLLECTIBLES,
+      label: Tabs.COLLECTIBLES
+    })
 
-      elements.push(
-        <div key={Tabs.COLLECTIBLES} className={styles.tiles}>
-          <CollectiblesPage
-            userId={userId}
-            name={name}
-            isMobile={false}
-            isUserOnTheirProfile={isUserOnTheirProfile}
-            profile={profile}
-            updateProfile={updateProfile}
-            onLoad={recalculate}
-          />
-        </div>
-      )
-    }
+    elements.push(
+      <div key={Tabs.COLLECTIBLES} className={styles.tiles}>
+        <CollectiblesPage
+          userId={userId}
+          name={name}
+          isMobile={false}
+          isUserOnTheirProfile={isUserOnTheirProfile}
+          profile={profile}
+          updateProfile={updateProfile}
+          onLoad={recalculate}
+        />
+      </div>
+    )
+    // }
 
     return { headers, elements }
   }
